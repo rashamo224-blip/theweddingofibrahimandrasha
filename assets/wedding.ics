@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Ibrahim and Rasha Wedding//Invitation//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:ibrahim-rasha-wedding-20260626@theweddingofibrahimandrasha.lol
+DTSTAMP:20260601T000000Z
+DTSTART:20260626T163000Z
+DTEND:20260626T203000Z
+SUMMARY:Ibrahim & Rasha Wedding
+LOCATION:Holiday Inn Salmiya
+DESCRIPTION:Wedding celebration for Ibrahim and Rasha. Wedding starts at 7:30 PM.
+END:VEVENT
+END:VCALENDAR
