@@ -251,6 +251,31 @@
         object-fit: contain;
       }
 
+      .calendar-actions {
+        margin-top: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .calendar-actions a {
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 15px;
+        border: 1px solid rgba(255, 250, 242, 0.42);
+        border-radius: 999px;
+        color: var(--soft);
+        background: rgba(70, 64, 58, 0.72);
+        box-shadow: 0 10px 22px rgba(20, 16, 12, 0.24);
+        font: 700 0.72rem Arial, sans-serif;
+        letter-spacing: 0.12em;
+        text-decoration: none;
+        text-transform: uppercase;
+      }
+
       body.open .flap {
         transform: rotateX(178deg);
       }
@@ -359,6 +384,11 @@
           width: min(100%, 360px);
         }
 
+        .calendar-actions {
+          display: grid;
+          width: min(100%, 360px);
+        }
+
         .sound-toggle {
           right: 14px;
           bottom: 14px;
@@ -390,6 +420,10 @@
           <figure class="art-card">
             <img src="assets/ir-wedding.png" alt="Ibrahim and Rasha wedding invitation details" />
           </figure>
+          <div class="calendar-actions" aria-label="Add wedding to calendar">
+            <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Ibrahim%20%26%20Rasha%20Wedding&dates=20260626T163000Z/20260626T203000Z&details=Wedding%20celebration%20for%20Ibrahim%20and%20Rasha.%20Wedding%20starts%20at%207%3A30%20PM.&location=Holiday%20Inn%20Salmiya" target="_blank" rel="noreferrer">Google Calendar</a>
+            <a href="assets/wedding.ics" download="Ibrahim-Rasha-Wedding.ics">Apple Calendar</a>
+          </div>
         </div>
       </section>
       <audio id="weddingMusic" src="assets/perfect.mp3" preload="auto" loop></audio>
