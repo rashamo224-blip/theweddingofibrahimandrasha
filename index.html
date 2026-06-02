@@ -161,19 +161,13 @@
         position: absolute;
         inset: 0;
         opacity: 0;
-        transform: translateX(28px) scale(1.02);
-        transition: opacity 520ms ease, transform 520ms ease;
+        transition: opacity 680ms ease;
         pointer-events: none;
       }
 
       .page.active {
         opacity: 1;
-        transform: translateX(0) scale(1);
         pointer-events: auto;
-      }
-
-      .page.previous {
-        transform: translateX(-28px) scale(0.99);
       }
 
       .page img {
@@ -184,7 +178,7 @@
         background: var(--cream);
       }
 
-      .next-button,
+      .nav-button,
       .rsvp-button,
       .calendar-buttons a {
         position: absolute;
@@ -201,8 +195,7 @@
         text-decoration: none;
       }
 
-      .next-button {
-        right: 12px;
+      .nav-button {
         bottom: 12px;
         width: 34px;
         height: 34px;
@@ -211,6 +204,14 @@
         line-height: 1;
         background: rgba(239, 219, 201, 0.62);
         box-shadow: 0 8px 16px rgba(42, 27, 21, 0.12);
+      }
+
+      .back-button {
+        left: 12px;
+      }
+
+      .next-button {
+        right: 12px;
       }
 
       .rsvp-button {
@@ -370,18 +371,21 @@
         <div class="pages" aria-live="polite">
           <article class="page active" data-page="0">
             <img src="assets/page-1.jpg" alt="Ibrahim and Rasha wedding cover" />
-            <button class="next-button" type="button" aria-label="Next page">›</button>
+            <button class="nav-button next-button" type="button" aria-label="Next page">›</button>
           </article>
           <article class="page" data-page="1">
-            <img src="assets/page-2.jpg" alt="Ibrahim and Rasha love story page" />
-            <button class="next-button" type="button" aria-label="Next page">›</button>
+            <img src="assets/page-2.jpg?v=20260602c" alt="Ibrahim and Rasha love story page" />
+            <button class="nav-button back-button" type="button" aria-label="Previous page">‹</button>
+            <button class="nav-button next-button" type="button" aria-label="Next page">›</button>
           </article>
           <article class="page" data-page="2">
             <img src="assets/page-3.jpg" alt="Ibrahim and Rasha wedding details page" />
-            <button class="next-button" type="button" aria-label="Next page">›</button>
+            <button class="nav-button back-button" type="button" aria-label="Previous page">‹</button>
+            <button class="nav-button next-button" type="button" aria-label="Next page">›</button>
           </article>
           <article class="page" data-page="3">
             <img src="assets/page-4.jpg" alt="Ibrahim and Rasha RSVP page" />
+            <button class="nav-button back-button" type="button" aria-label="Previous page">‹</button>
             <a class="rsvp-button" href="https://forms.gle/GyE1Fwaj8KNGQNTRA" target="_blank" rel="noreferrer">RSVP</a>
             <div class="calendar-buttons" aria-label="Add wedding to calendar">
               <span class="calendar-title">Add to Calendar</span>
@@ -420,12 +424,15 @@
       const opener = document.querySelector(".envelope-wrap");
       const pages = Array.from(document.querySelectorAll(".page"));
       const nextButtons = Array.from(document.querySelectorAll(".next-button"));
+      const backButtons = Array.from(document.querySelectorAll(".back-button"));
+      const navButtons = Array.from(document.querySelectorAll(".nav-button"));
       const soundToggle = document.querySelector(".sound-toggle");
       const soundOnIcon = document.querySelector(".sound-on");
       const soundOffIcon = document.querySelector(".sound-off");
       let opened = false;
       let pageIndex = 0;
       let fadeTimer;
+      let pageTransitioning = false;
 
       const updateSoundButton = () => {
         const isOff = music.muted || music.paused;
@@ -445,11 +452,21 @@
       };
 
       const showPage = (nextIndex) => {
+        if (pageTransitioning || nextIndex === pageIndex) return;
+        pageTransitioning = true;
+        navButtons.forEach((button) => {
+          button.disabled = true;
+        });
         pages.forEach((page, index) => {
           page.classList.toggle("active", index === nextIndex);
-          page.classList.toggle("previous", index < nextIndex);
         });
         pageIndex = nextIndex;
+        setTimeout(() => {
+          pageTransitioning = false;
+          navButtons.forEach((button) => {
+            button.disabled = false;
+          });
+        }, 700);
       };
 
       const openInvitation = () => {
@@ -459,6 +476,7 @@
         music.play().then(fadeMusicIn).catch(updateSoundButton);
         setTimeout(() => {
           document.body.classList.add("revealed");
+          pageTransitioning = false;
           showPage(0);
         }, 3400);
       };
@@ -474,6 +492,12 @@
       nextButtons.forEach((button) => {
         button.addEventListener("click", () => {
           if (pageIndex < pages.length - 1) showPage(pageIndex + 1);
+        });
+      });
+
+      backButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          if (pageIndex > 0) showPage(pageIndex - 1);
         });
       });
 
