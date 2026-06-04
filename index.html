@@ -379,6 +379,10 @@
         line-height: 1.7;
       }
 
+      body[data-version="ar"] .message-copy-en {
+        display: none;
+      }
+
       .message-link {
         margin-top: 4px;
       }
@@ -555,8 +559,8 @@
             <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Ibrahim%20%26%20Rasha%20Wedding&dates=20260626T163000Z/20260626T203000Z&details=Wedding%20celebration%20for%20Ibrahim%20and%20Rasha.%20Wedding%20starts%20at%207%3A30%20PM.&location=Holiday%20Inn%20Salmiya" target="_blank" rel="noreferrer">Android</a>
           </div>
           <div class="message-panel">
-            <p>Your presence is the greatest gift we could ask for. If you would like to leave us a message, share a memory, or send your wishes, we would be delighted to hear from you.</p>
-            <p lang="ar" dir="rtl">حضوركم هو أجمل هدية لنا. وإن رغبتم في ترك رسالة، أو مشاركة ذكرى، أو إرسال أمنياتكم، فسيُسعدنا كثيرًا أن نسمع منكم.</p>
+            <p class="message-copy-en">Your presence is the greatest gift we could ask for. If you would like to leave us a message, share a memory, or send your wishes, we would be delighted to hear from you.</p>
+            <p class="message-copy-ar" lang="ar" dir="rtl">حضوركم هو أجمل هدية لنا. وإن رغبتم في ترك رسالة، أو مشاركة ذكرى، أو إرسال أمنياتكم، فسيُسعدنا كثيرًا أن نسمع منكم.</p>
             <a class="message-link" href="https://forms.gle/gpxbps2Adb6erEnF8" target="_blank" rel="noreferrer">Send a Message / إرسال رسالة</a>
           </div>
           <button class="back-button" type="button">Back</button>
@@ -597,6 +601,7 @@
 
       const openInvitation = (version = "en") => {
         showVideoInvitation(version);
+        document.body.dataset.version = version;
         document.body.classList.add("open");
         if (invitationVideo && invitationVideo.paused) {
           invitationVideo.play().catch(() => {
@@ -616,6 +621,7 @@
         calendarToggle.setAttribute("aria-expanded", "false");
         calendarOptions.hidden = true;
         document.body.classList.remove("open");
+        delete document.body.dataset.version;
       };
 
       invitationVideo.addEventListener("error", () => {
