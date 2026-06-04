@@ -543,8 +543,8 @@
         <div class="card-panel" aria-live="polite">
           <figure class="art-card">
             <video class="invitation-video" controls playsinline preload="metadata" aria-label="Wedding invitation video"></video>
-            <div class="pending-card" aria-hidden="true" dir="rtl">
-              <p>النسخة العربية قريباً</p>
+            <div class="pending-card" aria-hidden="true">
+              <p>English version coming soon</p>
             </div>
           </figure>
           <div class="calendar-actions" aria-label="Wedding actions">
@@ -575,8 +575,8 @@
       const calendarOptions = document.querySelector("#calendarOptions");
       const backButton = document.querySelector(".back-button");
       const invitationSources = {
-        en: "assets/omaima-wedding-invitation.mp4",
-        ar: "assets/omaima-wedding-invitation-ar.mp4"
+        en: "assets/omaima-wedding-invitation-en.mp4",
+        ar: "assets/omaima-wedding-invitation.mp4"
       };
 
       const showPendingInvitation = () => {
@@ -600,7 +600,7 @@
         document.body.classList.add("open");
         if (invitationVideo && invitationVideo.paused) {
           invitationVideo.play().catch(() => {
-            if (version === "ar") {
+            if (version === "en") {
               showPendingInvitation();
             }
           });
@@ -619,7 +619,7 @@
       };
 
       invitationVideo.addEventListener("error", () => {
-        if (invitationVideo.src.includes(invitationSources.ar)) {
+        if (invitationVideo.src.includes(invitationSources.en)) {
           showPendingInvitation();
         }
       });
