@@ -313,6 +313,7 @@
       .calendar-actions a,
       .calendar-actions button,
       .calendar-options a,
+      .message-link,
       .back-button {
         min-height: 42px;
         display: inline-flex;
@@ -353,6 +354,33 @@
 
       .calendar-options[hidden] {
         display: none;
+      }
+
+      .message-panel {
+        width: min(100%, 460px);
+        margin-top: 18px;
+        display: grid;
+        justify-items: center;
+        gap: 10px;
+        color: var(--soft);
+        text-align: center;
+      }
+
+      .message-panel p {
+        max-width: 46ch;
+        margin: 0;
+        color: rgba(255, 250, 242, 0.84);
+        font: 0.86rem/1.55 "Helvetica Neue", Arial, sans-serif;
+      }
+
+      .message-panel p[lang="ar"] {
+        font-family: Arial, "Helvetica Neue", sans-serif;
+        font-size: 0.92rem;
+        line-height: 1.7;
+      }
+
+      .message-link {
+        margin-top: 4px;
       }
 
       body.open .flap {
@@ -476,6 +504,18 @@
           display: grid;
           width: min(100%, 360px);
         }
+
+        .message-panel {
+          width: min(100%, 360px);
+        }
+
+        .message-panel p {
+          font-size: 0.78rem;
+        }
+
+        .message-panel p[lang="ar"] {
+          font-size: 0.86rem;
+        }
       }
     </style>
   </head>
@@ -513,6 +553,11 @@
           <div class="calendar-options" id="calendarOptions" hidden>
             <a href="assets/wedding.ics" download="Ibrahim-Rasha-Wedding.ics">iOS</a>
             <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Ibrahim%20%26%20Rasha%20Wedding&dates=20260626T163000Z/20260626T203000Z&details=Wedding%20celebration%20for%20Ibrahim%20and%20Rasha.%20Wedding%20starts%20at%207%3A30%20PM.&location=Holiday%20Inn%20Salmiya" target="_blank" rel="noreferrer">Android</a>
+          </div>
+          <div class="message-panel">
+            <p>Your presence is the greatest gift we could ask for. If you would like to leave us a message, share a memory, or send your wishes, we would be delighted to hear from you.</p>
+            <p lang="ar" dir="rtl">حضوركم هو أجمل هدية لنا. وإن رغبتم في ترك رسالة، أو مشاركة ذكرى، أو إرسال أمنياتكم، فسيُسعدنا كثيرًا أن نسمع منكم.</p>
+            <a class="message-link" href="https://forms.gle/gpxbps2Adb6erEnF8" target="_blank" rel="noreferrer">Send a Message / إرسال رسالة</a>
           </div>
           <button class="back-button" type="button">Back</button>
         </div>
