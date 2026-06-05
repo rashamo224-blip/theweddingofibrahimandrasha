@@ -72,6 +72,10 @@
         perspective: 1200px;
       }
 
+      .envelope-stage[hidden] {
+        display: none;
+      }
+
       .envelope {
         position: relative;
         width: min(82vw, 430px);
@@ -412,6 +416,10 @@
         pointer-events: auto;
       }
 
+      body.open .admin-links {
+        display: none;
+      }
+
       @keyframes seal-release {
         45% {
           transform: translate(-50%, -50%) scale(0.88) rotate(-10deg);
@@ -565,7 +573,7 @@
           <div class="message-panel">
             <p class="message-copy-en">Your presence is the greatest gift we could ask for. If you would like to leave us a message, share a memory, or send your wishes, we would be delighted to hear from you.</p>
             <p class="message-copy-ar" lang="ar" dir="rtl">حضوركم هو أجمل هدية لنا. وإن رغبتم في ترك رسالة، أو مشاركة ذكرى، أو إرسال أمنياتكم، فسيُسعدنا كثيرًا أن نسمع منكم.</p>
-            <a class="message-link" href="https://forms.gle/gpxbps2Adb6erEnF8" target="_blank" rel="noreferrer">Send a Message / إرسال رسالة</a>
+            <a class="message-link" href="https://forms.gle/gpxbps2Adb6erEnF8" target="_blank" rel="noreferrer">Send a Message</a>
           </div>
           <button class="back-button" type="button">Back</button>
         </div>
@@ -579,12 +587,34 @@
     <script>
       const invitationVideo = document.querySelector(".invitation-video");
       const pendingCard = document.querySelector(".pending-card");
+      const envelopeStage = document.querySelector(".envelope-stage");
       const calendarToggle = document.querySelector(".calendar-toggle");
       const calendarOptions = document.querySelector("#calendarOptions");
+      const messageLink = document.querySelector(".message-link");
       const backButton = document.querySelector(".back-button");
+      let envelopeHideTimer;
       const invitationSources = {
         en: "assets/omaima-wedding-invitation-en.mp4",
         ar: "assets/omaima-wedding-invitation.mp4"
+      };
+      const languageLabels = {
+        en: {
+          calendar: "Add to Calendar",
+          message: "Send a Message",
+          back: "Back"
+        },
+        ar: {
+          calendar: "إضافة إلى التقويم",
+          message: "إرسال رسالة",
+          back: "رجوع"
+        }
+      };
+
+      const applyLanguageLabels = (version) => {
+        const labels = languageLabels[version] || languageLabels.en;
+        calendarToggle.textContent = labels.calendar;
+        messageLink.textContent = labels.message;
+        backButton.textContent = labels.back;
       };
 
       const showPendingInvitation = () => {
@@ -604,9 +634,15 @@
       };
 
       const openInvitation = (version = "en") => {
+        clearTimeout(envelopeHideTimer);
+        envelopeStage.hidden = false;
+        applyLanguageLabels(version);
         showVideoInvitation(version);
         document.body.dataset.version = version;
         document.body.classList.add("open");
+        envelopeHideTimer = setTimeout(() => {
+          envelopeStage.hidden = true;
+        }, 1800);
         if (invitationVideo && invitationVideo.paused) {
           invitationVideo.play().catch(() => {
             if (version === "en") {
@@ -617,6 +653,8 @@
       };
 
       const closeInvitation = () => {
+        clearTimeout(envelopeHideTimer);
+        envelopeStage.hidden = false;
         invitationVideo.pause();
         invitationVideo.removeAttribute("src");
         invitationVideo.load();
@@ -626,6 +664,7 @@
         calendarOptions.hidden = true;
         document.body.classList.remove("open");
         delete document.body.dataset.version;
+        applyLanguageLabels("en");
       };
 
       invitationVideo.addEventListener("error", () => {
