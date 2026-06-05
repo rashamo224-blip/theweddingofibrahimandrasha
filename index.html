@@ -634,12 +634,13 @@
         ar: {
           calendar: "احفظوا هذه اللحظة",
           countdownPrefix: "حتى يبدأ فصلٌ جديد من حياتنا",
-          countdownSuffix: "يوم",
+          countdownSuffix: "يومًا",
           countdownToday: "اليوم يبدأ فصلٌ جديد من حياتنا",
           message: "إرسال رسالة",
           back: "رجوع"
         }
       };
+      const toArabicDigits = (number) => String(number).replace(/\d/g, (digit) => "٠١٢٣٤٥٦٧٨٩"[digit]);
 
       const getDaysUntilEvent = () => {
         const today = new Date();
@@ -654,9 +655,13 @@
         calendarToggle.textContent = labels.calendar;
         countdown.dir = version === "ar" ? "rtl" : "ltr";
         countdown.lang = version === "ar" ? "ar" : "en";
-        countdown.innerHTML = days === 0
-          ? labels.countdownToday
-          : `${labels.countdownPrefix} <strong>${days}</strong> ${labels.countdownSuffix}`;
+        if (days === 0) {
+          countdown.innerHTML = labels.countdownToday;
+        } else if (version === "ar") {
+          countdown.innerHTML = `<strong>${toArabicDigits(days)}</strong> ${labels.countdownSuffix} ${labels.countdownPrefix}`;
+        } else {
+          countdown.innerHTML = `${labels.countdownPrefix} <strong>${days}</strong> ${labels.countdownSuffix}`;
+        }
         messageLink.textContent = labels.message;
         backButton.textContent = labels.back;
       };
