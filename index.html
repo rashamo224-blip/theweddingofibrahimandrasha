@@ -17,6 +17,8 @@
         --clay: #c98055;
         --taupe: #75685e;
         --soft: #fffaf2;
+        --glass: rgba(84, 50, 58, 0.76);
+        --glass-hover: rgba(104, 61, 68, 0.88);
         --shadow: rgba(75, 44, 31, 0.25);
       }
 
@@ -26,7 +28,7 @@
 
       html {
         min-height: 100%;
-        background: #5f5e5a;
+        background: #4b3a42;
       }
 
       body {
@@ -34,9 +36,7 @@
         margin: 0;
         color: var(--ink);
         font-family: Georgia, "Times New Roman", serif;
-        background:
-          radial-gradient(circle at 30% 10%, rgba(255, 246, 232, 0.42), transparent 30rem),
-          linear-gradient(135deg, #5c5a56 0%, #3f3d3a 100%);
+        background: linear-gradient(145deg, #f0d2ca 0%, #a96f75 43%, #4b4248 72%, #3f493d 100%);
         overflow-x: hidden;
       }
 
@@ -190,8 +190,8 @@
         border: 1px solid rgba(255, 250, 242, 0.48);
         border-radius: 999px;
         color: var(--soft);
-        background: rgba(70, 64, 58, 0.72);
-        box-shadow: 0 12px 26px rgba(20, 16, 12, 0.26);
+        background: var(--glass);
+        box-shadow: 0 12px 26px rgba(38, 22, 26, 0.26);
         cursor: pointer;
         font: 700 0.78rem "Helvetica Neue", Arial, sans-serif;
         letter-spacing: 0.12em;
@@ -200,7 +200,7 @@
       }
 
       .language-open:hover {
-        background: rgba(92, 82, 74, 0.86);
+        background: var(--glass-hover);
         transform: translateY(-2px);
       }
 
@@ -235,7 +235,7 @@
         border: 1px solid rgba(255, 250, 242, 0.3);
         border-radius: 999px;
         color: rgba(255, 250, 242, 0.8);
-        background: rgba(70, 64, 58, 0.56);
+        background: rgba(84, 50, 58, 0.56);
         font: 700 0.62rem Arial, sans-serif;
         letter-spacing: 0.12em;
         text-decoration: none;
@@ -328,8 +328,8 @@
         border: 1px solid rgba(255, 250, 242, 0.42);
         border-radius: 999px;
         color: var(--soft);
-        background: rgba(70, 64, 58, 0.72);
-        box-shadow: 0 10px 22px rgba(20, 16, 12, 0.24);
+        background: var(--glass);
+        box-shadow: 0 10px 22px rgba(38, 22, 26, 0.24);
         font: 700 0.72rem Arial, sans-serif;
         letter-spacing: 0.12em;
         text-decoration: none;
