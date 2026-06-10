@@ -185,6 +185,10 @@
         border-radius: 6px;
       }
 
+      #scanCanvas {
+        display: none;
+      }
+
       .actions {
         display: flex;
         flex-wrap: wrap;
@@ -384,6 +388,7 @@
       <div class="view" id="checkinView">
         <section class="panel scanner" aria-label="QR scanner">
           <video id="video" muted playsinline></video>
+          <canvas id="scanCanvas" aria-hidden="true"></canvas>
           <div class="actions">
             <button type="button" id="startScan">Start Camera</button>
             <input id="manualCode" placeholder="Enter invitation code" autocomplete="off" />
@@ -474,8 +479,11 @@
     </main>
 
     <script type="module">
+      import "./assets/jsQR.js";
       import { ADMIN_EMAIL, getAuthorizedUser, signInAdmin, supabaseClient } from "./assets/admin-supabase.js";
 
+      const qrDecoder = globalThis.jsQR;
+      document.documentElement.dataset.qrScanner = typeof qrDecoder === "function" ? "ready" : "unavailable";
       let weddingGuests = [];
       let guestsById = new Map();
       const rows = document.querySelector("#guestRows");
@@ -483,6 +491,8 @@
       const stats = document.querySelector("#stats");
       const result = document.querySelector("#result");
       const video = document.querySelector("#video");
+      const scanCanvas = document.querySelector("#scanCanvas");
+      const scanContext = scanCanvas.getContext("2d", { willReadFrequently: true });
       const manualCode = document.querySelector("#manualCode");
       const rsvpForm = document.querySelector("#rsvpForm");
       const rsvpGuest = document.querySelector("#rsvpGuest");
@@ -497,6 +507,8 @@
       let detector;
       let stream;
       let scanning = false;
+      let lastScannedCode = "";
+      let lastScannedAt = 0;
       let checkins = {};
       let rsvps = [];
 
@@ -681,11 +693,30 @@
       };
 
       const scanLoop = async () => {
-        if (!scanning || !detector) return;
+        if (!scanning) return;
         try {
-          const codes = await detector.detect(video);
-          if (codes.length) {
-            await checkCode(codes[0].rawValue);
+          let rawValue = "";
+
+          if (detector) {
+            const codes = await detector.detect(video);
+            rawValue = codes[0]?.rawValue || "";
+          } else if (qrDecoder && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+            if (scanCanvas.width !== video.videoWidth || scanCanvas.height !== video.videoHeight) {
+              scanCanvas.width = video.videoWidth;
+              scanCanvas.height = video.videoHeight;
+            }
+            scanContext.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
+            const imageData = scanContext.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+            rawValue = qrDecoder(imageData.data, imageData.width, imageData.height, {
+              inversionAttempts: "dontInvert"
+            })?.data || "";
+          }
+
+          const now = Date.now();
+          if (rawValue && (rawValue !== lastScannedCode || now - lastScannedAt > 2500)) {
+            lastScannedCode = rawValue;
+            lastScannedAt = now;
+            await checkCode(rawValue);
             await new Promise((resolve) => setTimeout(resolve, 1400));
           }
         } catch (error) {
@@ -695,17 +726,43 @@
       };
 
       document.querySelector("#startScan").addEventListener("click", async () => {
-        if (!("BarcodeDetector" in window)) {
-          showResult("bad", "Unsupported", "Camera scanner unavailable", "Use manual code entry on this browser.");
+        if (!navigator.mediaDevices?.getUserMedia) {
+          showResult("bad", "Unsupported", "Camera unavailable", "Open this secure HTTPS page in Safari or Chrome, or use manual code entry.");
           return;
         }
 
-        detector = new BarcodeDetector({ formats: ["qr_code"] });
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        video.srcObject = stream;
-        await video.play();
-        scanning = true;
-        scanLoop();
+        try {
+          detector = "BarcodeDetector" in window
+            ? new BarcodeDetector({ formats: ["qr_code"] })
+            : null;
+
+          if (!detector && !qrDecoder) {
+            showResult("bad", "Scanner unavailable", "QR reader did not load", "Refresh the page and try again, or use manual code entry.");
+            return;
+          }
+
+          if (stream) stream.getTracks().forEach((track) => track.stop());
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: {
+              facingMode: { ideal: "environment" },
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            }
+          });
+          video.srcObject = stream;
+          await video.play();
+          scanning = true;
+          showResult("ok", "Camera ready", "Scan a guest QR code", "Hold the QR code steady inside the camera view.");
+          scanLoop();
+        } catch (error) {
+          showResult(
+            "bad",
+            "Camera permission needed",
+            "Unable to start camera",
+            "Allow camera access in your browser settings, then press Start Camera again."
+          );
+        }
       });
 
       document.querySelector("#manualCheck").addEventListener("click", async () => {
