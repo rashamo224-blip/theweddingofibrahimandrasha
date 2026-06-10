@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <title>Ibrahim & Rasha Check-In</title>
+    <style>
+      :root {
+        --bg: #4a4742;
+        --paper: #fff8ef;
+        --ink: #862719;
+        --gold: #b8893b;
+        --muted: #74665f;
+        --line: #dbc5aa;
+        --ok: #1f7a4a;
+        --bad: #a42b25;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        color: #332820;
+        font-family: Arial, sans-serif;
+        background:
+          radial-gradient(circle at top, rgba(255, 248, 239, 0.22), transparent 24rem),
+          var(--bg);
+      }
+
+      .app {
+        width: min(980px, 100%);
+        margin: 0 auto;
+        padding: 18px;
+        display: grid;
+        gap: 16px;
+      }
+
+      .login-screen {
+        width: min(460px, calc(100% - 28px));
+        min-height: 100vh;
+        margin: 0 auto;
+        display: grid;
+        place-items: center;
+        padding: 20px 0;
+      }
+
+      .login-card {
+        width: 100%;
+        display: grid;
+        gap: 18px;
+        padding: 28px;
+        background:
+          linear-gradient(rgba(255, 248, 239, 0.94), rgba(255, 248, 239, 0.94)),
+          url("assets/ir-wedding.png") center / cover;
+        border: 1px solid rgba(219, 197, 170, 0.75);
+        border-radius: 8px;
+        box-shadow: 0 18px 34px rgba(20, 14, 10, 0.28);
+      }
+
+      .login-card h1 {
+        font-size: clamp(2.4rem, 10vw, 4.6rem);
+        line-height: 0.9;
+      }
+
+      .login-form {
+        display: grid;
+        gap: 12px;
+      }
+
+      .field {
+        display: grid;
+        gap: 7px;
+      }
+
+      label {
+        color: var(--muted);
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .login-error {
+        min-height: 1.4em;
+        margin: 0;
+        color: var(--bad);
+        font-weight: 700;
+      }
+
+      body.locked .app {
+        display: none;
+      }
+
+      body:not(.locked) .login-screen {
+        display: none;
+      }
+
+      header,
+      .panel {
+        background: rgba(255, 248, 239, 0.95);
+        border: 1px solid rgba(219, 197, 170, 0.75);
+        border-radius: 8px;
+        box-shadow: 0 16px 28px rgba(20, 14, 10, 0.22);
+      }
+
+      header {
+        padding: 22px;
+        display: grid;
+        gap: 10px;
+      }
+
+      h1 {
+        margin: 0;
+        color: var(--ink);
+        font: 400 clamp(2rem, 6vw, 4rem) Georgia, "Times New Roman", serif;
+      }
+
+      .stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .header-top {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .header-copy {
+        display: grid;
+        gap: 10px;
+      }
+
+      .note {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+
+      .stat {
+        padding: 8px 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 0.84rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .admin-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .admin-tab {
+        color: var(--ink);
+        background: var(--paper);
+      }
+
+      .admin-tab.active {
+        color: var(--paper);
+        background: var(--ink);
+      }
+
+      .scanner {
+        padding: 14px;
+        display: grid;
+        gap: 14px;
+      }
+
+      video {
+        width: 100%;
+        max-height: 52vh;
+        display: block;
+        object-fit: cover;
+        background: #1f1f1f;
+        border-radius: 6px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        min-height: 44px;
+        border-radius: 999px;
+        font: 700 0.85rem Arial, sans-serif;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      button {
+        border: 1px solid rgba(134, 39, 25, 0.36);
+        padding: 10px 16px;
+        color: var(--paper);
+        background: var(--ink);
+        cursor: pointer;
+      }
+
+      button.secondary {
+        color: var(--ink);
+        background: var(--paper);
+      }
+
+      input,
+      select,
+      textarea {
+        flex: 1 1 240px;
+        min-width: 0;
+        border: 1px solid var(--line);
+        padding: 10px 14px;
+        color: #332820;
+        background: #fffdf8;
+      }
+
+      textarea {
+        min-height: 94px;
+        border-radius: 18px;
+        resize: vertical;
+        text-transform: none;
+        letter-spacing: 0;
+      }
+
+      .view[hidden] {
+        display: none;
+      }
+
+      .rsvp-form {
+        padding: 18px;
+        display: grid;
+        gap: 14px;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .form-grid .wide {
+        grid-column: 1 / -1;
+      }
+
+      .result {
+        padding: 18px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .result.ok {
+        border-color: rgba(31, 122, 74, 0.45);
+      }
+
+      .result.bad {
+        border-color: rgba(164, 43, 37, 0.45);
+      }
+
+      .status {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.78rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      .guest-name {
+        margin: 0;
+        color: var(--ink);
+        font: 400 clamp(1.8rem, 5vw, 3.2rem) Georgia, "Times New Roman", serif;
+      }
+
+      .message {
+        margin: 0;
+        color: #514138;
+        font-size: 1rem;
+        line-height: 1.5;
+      }
+
+      .list {
+        padding: 16px;
+        overflow: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 620px;
+      }
+
+      th,
+      td {
+        padding: 12px 10px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 0.72rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .checked {
+        color: var(--ok);
+        font-weight: 700;
+      }
+
+      .pending {
+        color: var(--gold);
+        font-weight: 700;
+      }
+
+      @media (max-width: 560px) {
+        .app {
+          padding: 12px;
+        }
+
+        .actions {
+          display: grid;
+        }
+
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body class="locked">
+    <section class="login-screen" aria-label="Admin login">
+      <form class="login-card" id="loginForm">
+        <div>
+          <p class="status">Ibrahim & Rasha</p>
+          <h1>Admin Login</h1>
+          <p class="note">Sign in to scan and verify guest invitation codes.</p>
+        </div>
+        <div class="login-form">
+          <div class="field">
+            <label for="adminUser">Username</label>
+            <input id="adminUser" autocomplete="username" required />
+          </div>
+          <div class="field">
+            <label for="adminPass">Password</label>
+            <input id="adminPass" type="password" autocomplete="current-password" required />
+          </div>
+          <button type="submit">Login</button>
+          <p class="login-error" id="loginError" aria-live="polite"></p>
+        </div>
+      </form>
+    </section>
+
+    <main class="app">
+      <header>
+        <div class="header-top">
+          <div class="header-copy">
+            <h1>Wedding Check-In</h1>
+            <p class="note">Single-device mode: attendance is saved only on this phone or tablet.</p>
+          </div>
+          <button type="button" class="secondary" id="logout">Logout</button>
+        </div>
+        <div class="stats" id="stats"></div>
+        <nav class="admin-tabs" aria-label="Admin pages">
+          <button class="admin-tab active" type="button" data-view="checkin">Check-In</button>
+          <button class="admin-tab" type="button" data-view="rsvp">RSVP Forms</button>
+        </nav>
+      </header>
+
+      <div class="view" id="checkinView">
+        <section class="panel scanner" aria-label="QR scanner">
+          <video id="video" muted playsinline></video>
+          <div class="actions">
+            <button type="button" id="startScan">Start Camera</button>
+            <input id="manualCode" placeholder="Enter invitation code" autocomplete="off" />
+            <button type="button" class="secondary" id="manualCheck">Check Code</button>
+            <button type="button" class="secondary" id="exportCsv">Export CSV</button>
+            <button type="button" class="secondary" id="resetCheckins">Reset Check-Ins</button>
+          </div>
+        </section>
+
+        <section class="panel result" id="result" aria-live="polite">
+          <p class="status">Ready</p>
+          <h2 class="guest-name">Scan a guest QR code</h2>
+          <p class="message">Each invitation code can be checked in once on this device.</p>
+        </section>
+
+        <section class="panel list">
+          <table>
+            <thead>
+              <tr>
+                <th>Guest</th>
+                <th>Seats</th>
+                <th>Code</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="guestRows"></tbody>
+          </table>
+        </section>
+      </div>
+
+      <div class="view" id="rsvpView" hidden>
+        <section class="panel rsvp-form" aria-label="RSVP form receiver">
+          <div>
+            <p class="status">RSVP Forms</p>
+            <h2 class="guest-name">Receive RSVP</h2>
+            <p class="message">Add RSVP replies here as they come in. They are saved on this device.</p>
+          </div>
+          <form class="form-grid" id="rsvpForm">
+            <div class="field">
+              <label for="rsvpGuest">Guest name</label>
+              <input id="rsvpGuest" list="guestNames" autocomplete="off" required />
+              <datalist id="guestNames"></datalist>
+            </div>
+            <div class="field">
+              <label for="rsvpStatus">RSVP status</label>
+              <select id="rsvpStatus">
+                <option value="Attending">Attending</option>
+                <option value="Not attending">Not attending</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="rsvpGuests">Guests attending with you</label>
+              <input id="rsvpGuests" type="number" min="0" value="0" />
+            </div>
+            <div class="field">
+              <label for="rsvpPhone">Phone</label>
+              <input id="rsvpPhone" autocomplete="tel" />
+            </div>
+            <div class="field wide">
+              <label for="rsvpNotes">Notes</label>
+              <textarea id="rsvpNotes" placeholder="Dietary notes, special requests, or message"></textarea>
+            </div>
+            <div class="actions wide">
+              <button type="submit">Save RSVP</button>
+              <button type="button" class="secondary" id="exportRsvpCsv">Export RSVP CSV</button>
+              <button type="button" class="secondary" id="clearRsvps">Clear RSVPs</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel list">
+          <table>
+            <thead>
+              <tr>
+                <th>Guest</th>
+                <th>Status</th>
+                <th>With You</th>
+                <th>Phone</th>
+                <th>Received</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="rsvpRows"></tbody>
+          </table>
+        </section>
+      </div>
+    </main>
+
+    <script src="assets/guests.js"></script>
+    <script>
+      const ADMIN_CREDENTIAL_HASH = "be228da01768c8c31fd5915cac44e50714785c3e1c9b7f95ddfe8eaca296ae2e";
+      const STORAGE_KEY = "irWeddingCheckins";
+      const RSVP_KEY = "irWeddingRsvps";
+      const AUTH_KEY = "irWeddingAdminLoggedIn";
+      const guestsById = new Map(WEDDING_GUESTS.map((guest) => [guest.id, guest]));
+      const rows = document.querySelector("#guestRows");
+      const rsvpRows = document.querySelector("#rsvpRows");
+      const stats = document.querySelector("#stats");
+      const result = document.querySelector("#result");
+      const video = document.querySelector("#video");
+      const manualCode = document.querySelector("#manualCode");
+      const rsvpForm = document.querySelector("#rsvpForm");
+      const rsvpGuest = document.querySelector("#rsvpGuest");
+      const rsvpStatus = document.querySelector("#rsvpStatus");
+      const rsvpGuests = document.querySelector("#rsvpGuests");
+      const rsvpPhone = document.querySelector("#rsvpPhone");
+      const rsvpNotes = document.querySelector("#rsvpNotes");
+      const loginForm = document.querySelector("#loginForm");
+      const loginError = document.querySelector("#loginError");
+      const adminUser = document.querySelector("#adminUser");
+      const adminPass = document.querySelector("#adminPass");
+      let detector;
+      let stream;
+      let scanning = false;
+
+      const readCheckins = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      const writeCheckins = (value) => localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+      const readRsvps = () => JSON.parse(localStorage.getItem(RSVP_KEY) || "[]");
+      const writeRsvps = (value) => localStorage.setItem(RSVP_KEY, JSON.stringify(value));
+      const normalize = (value) => value.trim().toUpperCase();
+      const hashCredentials = async (username, password) => {
+        const bytes = new TextEncoder().encode(`${username.trim()}:${password}`);
+        const digest = await crypto.subtle.digest("SHA-256", bytes);
+        return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+      };
+      const unlock = () => {
+        document.body.classList.remove("locked");
+        render();
+      };
+      const csvEscape = (cell) => `"${String(cell).replaceAll('"', '""')}"`;
+      const downloadCsv = (filename, rows) => {
+        const csv = rows.map((row) => row.map(csvEscape).join(",")).join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(link.href);
+      };
+
+      loginForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const credentialHash = await hashCredentials(adminUser.value, adminPass.value);
+        if (credentialHash === ADMIN_CREDENTIAL_HASH) {
+          sessionStorage.setItem(AUTH_KEY, "true");
+          loginError.textContent = "";
+          adminPass.value = "";
+          unlock();
+        } else {
+          loginError.textContent = "Incorrect username or password.";
+          adminPass.value = "";
+          adminPass.focus();
+        }
+      });
+
+      document.querySelector("#logout").addEventListener("click", () => {
+        sessionStorage.removeItem(AUTH_KEY);
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+        }
+        scanning = false;
+        document.body.classList.add("locked");
+        adminUser.focus();
+      });
+
+      document.querySelector("#guestNames").innerHTML = WEDDING_GUESTS
+        .map((guest) => `<option value="${guest.name}"></option>`)
+        .join("");
+
+      document.querySelectorAll(".admin-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const view = tab.dataset.view;
+          document.querySelectorAll(".admin-tab").forEach((item) => {
+            item.classList.toggle("active", item === tab);
+          });
+          document.querySelector("#checkinView").hidden = view !== "checkin";
+          document.querySelector("#rsvpView").hidden = view !== "rsvp";
+        });
+      });
+
+      const render = () => {
+        const checkins = readCheckins();
+        const rsvps = readRsvps();
+        const checkedGuests = WEDDING_GUESTS.filter((guest) => checkins[guest.id]);
+        const checkedSeats = checkedGuests.reduce((sum, guest) => sum + guest.seats, 0);
+        const totalSeats = WEDDING_GUESTS.reduce((sum, guest) => sum + guest.seats, 0);
+        const attendingRsvps = rsvps.filter((rsvp) => rsvp.status === "Attending");
+        const attendingSeats = attendingRsvps.reduce((sum, rsvp) => sum + 1 + Number(rsvp.guestsWithYou || 0), 0);
+
+        stats.innerHTML = `
+          <span class="stat">${checkedGuests.length}/${WEDDING_GUESTS.length} invitations checked in</span>
+          <span class="stat">${checkedSeats}/${totalSeats} guests arrived</span>
+          <span class="stat">${totalSeats - checkedSeats} seats remaining</span>
+          <span class="stat">${rsvps.length} RSVP forms</span>
+          <span class="stat">${attendingSeats} RSVP guests attending</span>
+        `;
+
+        rows.innerHTML = WEDDING_GUESTS.map((guest) => {
+          const checked = checkins[guest.id];
+          return `
+            <tr>
+              <td>${guest.name}</td>
+              <td>${guest.seats}</td>
+              <td>${guest.id}</td>
+              <td class="${checked ? "checked" : "pending"}">${checked ? "Checked in" : "Pending"}</td>
+            </tr>
+          `;
+        }).join("");
+
+        rsvpRows.innerHTML = rsvps.length
+          ? rsvps.map((rsvp) => `
+            <tr>
+              <td>${rsvp.name}</td>
+              <td class="${rsvp.status === "Attending" ? "checked" : "pending"}">${rsvp.status}</td>
+              <td>${rsvp.guestsWithYou}</td>
+              <td>${rsvp.phone || ""}</td>
+              <td>${new Date(rsvp.receivedAt).toLocaleString()}</td>
+              <td>${rsvp.notes || ""}</td>
+            </tr>
+          `).join("")
+          : `<tr><td colspan="6">No RSVP forms received yet.</td></tr>`;
+      };
+
+      const showResult = (kind, status, name, message) => {
+        result.className = `panel result ${kind}`;
+        result.innerHTML = `
+          <p class="status">${status}</p>
+          <h2 class="guest-name">${name}</h2>
+          <p class="message">${message}</p>
+        `;
+      };
+
+      const checkCode = (rawCode) => {
+        const code = normalize(rawCode);
+        const guest = guestsById.get(code);
+        const checkins = readCheckins();
+
+        if (!guest) {
+          showResult("bad", "Not found", "Invalid invitation", "This QR code is not in the guest list.");
+          return;
+        }
+
+        if (checkins[guest.id]) {
+          const time = new Date(checkins[guest.id]).toLocaleString();
+          showResult("bad", "Already used", guest.name, `This invitation was already checked in on ${time}.`);
+          return;
+        }
+
+        checkins[guest.id] = new Date().toISOString();
+        writeCheckins(checkins);
+        showResult("ok", "Welcome", guest.name, `${guest.seats} ${guest.seats === 1 ? "seat" : "seats"} confirmed.`);
+        render();
+      };
+
+      const scanLoop = async () => {
+        if (!scanning || !detector) return;
+        try {
+          const codes = await detector.detect(video);
+          if (codes.length) {
+            checkCode(codes[0].rawValue);
+            await new Promise((resolve) => setTimeout(resolve, 1400));
+          }
+        } catch (error) {
+          showResult("bad", "Camera issue", "Scanner paused", "Use manual code entry if scanning is unavailable.");
+        }
+        requestAnimationFrame(scanLoop);
+      };
+
+      document.querySelector("#startScan").addEventListener("click", async () => {
+        if (!("BarcodeDetector" in window)) {
+          showResult("bad", "Unsupported", "Camera scanner unavailable", "Use manual code entry on this browser.");
+          return;
+        }
+
+        detector = new BarcodeDetector({ formats: ["qr_code"] });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = stream;
+        await video.play();
+        scanning = true;
+        scanLoop();
+      });
+
+      document.querySelector("#manualCheck").addEventListener("click", () => {
+        checkCode(manualCode.value);
+        manualCode.value = "";
+      });
+
+      document.querySelector("#exportCsv").addEventListener("click", () => {
+        const checkins = readCheckins();
+        const rows = [
+          ["Guest", "Seats", "Code", "Status", "Checked In At"],
+          ...WEDDING_GUESTS.map((guest) => [
+            guest.name,
+            guest.seats,
+            guest.id,
+            checkins[guest.id] ? "Checked in" : "Pending",
+            checkins[guest.id] || ""
+          ])
+        ];
+        downloadCsv("ibrahim-rasha-checkins.csv", rows);
+      });
+
+      rsvpForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const name = rsvpGuest.value.trim();
+        if (!name) return;
+
+        const rsvps = readRsvps();
+        const existingIndex = rsvps.findIndex((rsvp) => normalize(rsvp.name) === normalize(name));
+        const rsvp = {
+          name,
+          status: rsvpStatus.value,
+          guestsWithYou: Math.max(0, Number(rsvpGuests.value || 0)),
+          phone: rsvpPhone.value.trim(),
+          notes: rsvpNotes.value.trim(),
+          receivedAt: new Date().toISOString()
+        };
+
+        if (existingIndex >= 0) rsvps[existingIndex] = rsvp;
+        else rsvps.push(rsvp);
+
+        writeRsvps(rsvps);
+        rsvpForm.reset();
+        rsvpGuests.value = 0;
+        render();
+      });
+
+      document.querySelector("#exportRsvpCsv").addEventListener("click", () => {
+        const rsvps = readRsvps();
+        const rows = [
+          ["Guest", "Status", "Guests Attending With You", "Phone", "Received At", "Notes"],
+          ...rsvps.map((rsvp) => [
+            rsvp.name,
+            rsvp.status,
+            rsvp.guestsWithYou,
+            rsvp.phone || "",
+            rsvp.receivedAt,
+            rsvp.notes || ""
+          ])
+        ];
+        downloadCsv("ibrahim-rasha-rsvps.csv", rows);
+      });
+
+      document.querySelector("#clearRsvps").addEventListener("click", () => {
+        writeRsvps([]);
+        render();
+      });
+
+      document.querySelector("#resetCheckins").addEventListener("click", () => {
+        writeCheckins({});
+        showResult("ok", "Reset", "Check-ins cleared", "All guests are pending again on this device.");
+        render();
+      });
+
+      manualCode.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          checkCode(manualCode.value);
+          manualCode.value = "";
+        }
+      });
+
+      if (sessionStorage.getItem(AUTH_KEY) === "true") {
+        unlock();
+      } else {
+        render();
+        adminUser.focus();
+      }
+    </script>
+  </body>
+</html>
