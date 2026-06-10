@@ -479,7 +479,7 @@
     </main>
 
     <script type="module">
-      import "./assets/jsQR.js";
+      import "./assets/jsQR.js?v=20260610";
       import { ADMIN_EMAIL, getAuthorizedUser, signInAdmin, supabaseClient } from "./assets/admin-supabase.js";
 
       const qrDecoder = globalThis.jsQR;
@@ -708,7 +708,7 @@
             scanContext.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
             const imageData = scanContext.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
             rawValue = qrDecoder(imageData.data, imageData.width, imageData.height, {
-              inversionAttempts: "dontInvert"
+              inversionAttempts: "attemptBoth"
             })?.data || "";
           }
 
