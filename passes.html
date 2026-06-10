@@ -253,8 +253,8 @@
         </div>
         <div class="login-form">
           <div class="field">
-            <label for="adminUser">Username</label>
-            <input id="adminUser" autocomplete="username" required />
+            <label for="adminUser">Email</label>
+            <input id="adminUser" type="email" autocomplete="username" value="rashamo224@gmail.com" readonly required />
           </div>
           <div class="field">
             <label for="adminPass">Password</label>
@@ -281,66 +281,76 @@
       <main class="passes" id="passes"></main>
     </div>
 
-    <script src="assets/guests.js"></script>
     <script src="assets/qr.js"></script>
-    <script>
+    <script type="module">
+      import { ADMIN_EMAIL, getAuthorizedUser, signInAdmin, supabaseClient } from "./assets/admin-supabase.js";
+
       const passes = document.querySelector("#passes");
-      const AUTH_KEY = "irWeddingAdminLoggedIn";
-      const ADMIN_CREDENTIAL_HASH = "be228da01768c8c31fd5915cac44e50714785c3e1c9b7f95ddfe8eaca296ae2e";
       const loginForm = document.querySelector("#loginForm");
       const loginError = document.querySelector("#loginError");
       const adminUser = document.querySelector("#adminUser");
       const adminPass = document.querySelector("#adminPass");
-      const hashCredentials = async (username, password) => {
-        const bytes = new TextEncoder().encode(`${username.trim()}:${password}`);
-        const digest = await crypto.subtle.digest("SHA-256", bytes);
-        return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+      let weddingGuests = [];
+      const renderPasses = () => {
+        const totalSeats = weddingGuests.reduce((sum, guest) => sum + guest.seats, 0);
+        document.querySelector("#summary").textContent =
+          `${weddingGuests.length} invitations · ${totalSeats} guests · Friends`;
+
+        passes.innerHTML = weddingGuests.map((guest) => `
+          <article class="pass">
+            <div class="names">
+              <div class="kicker">Ibrahim & Rasha</div>
+              <div class="name">${guest.name}</div>
+              ${guest.seats > 1 ? `<div class="seats">${guest.seats - 1} guests attending with you</div>` : ""}
+            </div>
+            <div class="qr">${renderQrSvg(guest.id, 6)}</div>
+            <div class="code">${guest.id}</div>
+          </article>
+        `).join("");
       };
-      const unlock = () => {
+      const unlock = async () => {
+        const { data, error } = await supabaseClient
+          .from("wedding_guests")
+          .select("id, name, seats, guest_group")
+          .order("id");
+        if (error) {
+          loginError.textContent = error.message || "Unable to load guest passes.";
+          await supabaseClient.auth.signOut();
+          lock();
+          return;
+        }
+        weddingGuests = data;
+        renderPasses();
         document.body.classList.remove("locked");
       };
-      const totalSeats = WEDDING_GUESTS.reduce((sum, guest) => sum + guest.seats, 0);
-      document.querySelector("#summary").textContent =
-        `${WEDDING_GUESTS.length} invitations · ${totalSeats} guests · Friends`;
-
-      passes.innerHTML = WEDDING_GUESTS.map((guest) => `
-        <article class="pass">
-          <div class="names">
-            <div class="kicker">Ibrahim & Rasha</div>
-            <div class="name">${guest.name}</div>
-            ${guest.seats > 1 ? `<div class="seats">${guest.seats - 1} guests attending with you</div>` : ""}
-          </div>
-          <div class="qr">${renderQrSvg(guest.id, 6)}</div>
-          <div class="code">${guest.id}</div>
-        </article>
-      `).join("");
-
+      const lock = () => {
+        document.body.classList.add("locked");
+        adminUser.value = ADMIN_EMAIL;
+        adminPass.value = "";
+        adminPass.focus();
+      };
       loginForm.addEventListener("submit", async (event) => {
         event.preventDefault();
-        const credentialHash = await hashCredentials(adminUser.value, adminPass.value);
-        if (credentialHash === ADMIN_CREDENTIAL_HASH) {
-          sessionStorage.setItem(AUTH_KEY, "true");
+        loginError.textContent = "Signing in...";
+        try {
+          await signInAdmin(adminPass.value);
           loginError.textContent = "";
           adminPass.value = "";
-          unlock();
-        } else {
-          loginError.textContent = "Incorrect username or password.";
+          await unlock();
+        } catch (error) {
+          loginError.textContent = error.message || "Unable to sign in.";
           adminPass.value = "";
           adminPass.focus();
         }
       });
 
-      document.querySelector("#logout").addEventListener("click", () => {
-        sessionStorage.removeItem(AUTH_KEY);
-        document.body.classList.add("locked");
-        adminUser.focus();
+      document.querySelector("#logout").addEventListener("click", async () => {
+        await supabaseClient.auth.signOut();
+        lock();
       });
 
-      if (sessionStorage.getItem(AUTH_KEY) === "true") {
-        unlock();
-      } else {
-        adminUser.focus();
-      }
+      if (await getAuthorizedUser()) await unlock();
+      else lock();
     </script>
   </body>
 </html>

@@ -349,8 +349,8 @@
         </div>
         <div class="login-form">
           <div class="field">
-            <label for="adminUser">Username</label>
-            <input id="adminUser" autocomplete="username" required />
+            <label for="adminUser">Email</label>
+            <input id="adminUser" type="email" autocomplete="username" value="rashamo224@gmail.com" readonly required />
           </div>
           <div class="field">
             <label for="adminPass">Password</label>
@@ -367,9 +367,12 @@
         <div class="header-top">
           <div class="header-copy">
             <h1>Wedding Check-In</h1>
-            <p class="note">Single-device mode: attendance is saved only on this phone or tablet.</p>
+            <p class="note">Secure online mode: attendance is synchronized through Supabase.</p>
           </div>
-          <button type="button" class="secondary" id="logout">Logout</button>
+          <div class="actions">
+            <button type="button" class="secondary" onclick="window.location.href='passes.html'">Guest Passes</button>
+            <button type="button" class="secondary" id="logout">Logout</button>
+          </div>
         </div>
         <div class="stats" id="stats"></div>
         <nav class="admin-tabs" aria-label="Admin pages">
@@ -470,13 +473,11 @@
       </div>
     </main>
 
-    <script src="assets/guests.js"></script>
-    <script>
-      const ADMIN_CREDENTIAL_HASH = "be228da01768c8c31fd5915cac44e50714785c3e1c9b7f95ddfe8eaca296ae2e";
-      const STORAGE_KEY = "irWeddingCheckins";
-      const RSVP_KEY = "irWeddingRsvps";
-      const AUTH_KEY = "irWeddingAdminLoggedIn";
-      const guestsById = new Map(WEDDING_GUESTS.map((guest) => [guest.id, guest]));
+    <script type="module">
+      import { ADMIN_EMAIL, getAuthorizedUser, signInAdmin, supabaseClient } from "./assets/admin-supabase.js";
+
+      let weddingGuests = [];
+      let guestsById = new Map();
       const rows = document.querySelector("#guestRows");
       const rsvpRows = document.querySelector("#rsvpRows");
       const stats = document.querySelector("#stats");
@@ -496,20 +497,19 @@
       let detector;
       let stream;
       let scanning = false;
+      let checkins = {};
+      let rsvps = [];
 
-      const readCheckins = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-      const writeCheckins = (value) => localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
-      const readRsvps = () => JSON.parse(localStorage.getItem(RSVP_KEY) || "[]");
-      const writeRsvps = (value) => localStorage.setItem(RSVP_KEY, JSON.stringify(value));
       const normalize = (value) => value.trim().toUpperCase();
-      const hashCredentials = async (username, password) => {
-        const bytes = new TextEncoder().encode(`${username.trim()}:${password}`);
-        const digest = await crypto.subtle.digest("SHA-256", bytes);
-        return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-      };
-      const unlock = () => {
+      const unlock = async () => {
         document.body.classList.remove("locked");
-        render();
+        await refreshData();
+      };
+      const lock = () => {
+        document.body.classList.add("locked");
+        adminUser.value = ADMIN_EMAIL;
+        adminPass.value = "";
+        adminPass.focus();
       };
       const csvEscape = (cell) => `"${String(cell).replaceAll('"', '""')}"`;
       const downloadCsv = (filename, rows) => {
@@ -524,32 +524,27 @@
 
       loginForm.addEventListener("submit", async (event) => {
         event.preventDefault();
-        const credentialHash = await hashCredentials(adminUser.value, adminPass.value);
-        if (credentialHash === ADMIN_CREDENTIAL_HASH) {
-          sessionStorage.setItem(AUTH_KEY, "true");
+        loginError.textContent = "Signing in...";
+        try {
+          await signInAdmin(adminPass.value);
           loginError.textContent = "";
           adminPass.value = "";
-          unlock();
-        } else {
-          loginError.textContent = "Incorrect username or password.";
+          await unlock();
+        } catch (error) {
+          loginError.textContent = error.message || "Unable to sign in.";
           adminPass.value = "";
           adminPass.focus();
         }
       });
 
-      document.querySelector("#logout").addEventListener("click", () => {
-        sessionStorage.removeItem(AUTH_KEY);
+      document.querySelector("#logout").addEventListener("click", async () => {
+        await supabaseClient.auth.signOut();
         if (stream) {
           stream.getTracks().forEach((track) => track.stop());
         }
         scanning = false;
-        document.body.classList.add("locked");
-        adminUser.focus();
+        lock();
       });
-
-      document.querySelector("#guestNames").innerHTML = WEDDING_GUESTS
-        .map((guest) => `<option value="${guest.name}"></option>`)
-        .join("");
 
       document.querySelectorAll(".admin-tab").forEach((tab) => {
         tab.addEventListener("click", () => {
@@ -562,24 +557,58 @@
         });
       });
 
+      const refreshData = async () => {
+        const [guestResult, checkinResult, rsvpResult] = await Promise.all([
+          supabaseClient.from("wedding_guests").select("id, name, seats, guest_group").order("id"),
+          supabaseClient.from("wedding_checkins").select("guest_id, checked_in_at"),
+          supabaseClient.from("wedding_rsvps").select("*").order("received_at", { ascending: false })
+        ]);
+
+        if (guestResult.error || checkinResult.error || rsvpResult.error) {
+          showResult(
+            "bad",
+            "Database setup needed",
+            "Supabase is not ready",
+            guestResult.error?.message || checkinResult.error?.message || rsvpResult.error?.message || "Run supabase-setup.sql in Supabase."
+          );
+          return;
+        }
+
+        weddingGuests = guestResult.data;
+        guestsById = new Map(weddingGuests.map((guest) => [guest.id, guest]));
+        document.querySelector("#guestNames").innerHTML = weddingGuests
+          .map((guest) => `<option value="${guest.name}"></option>`)
+          .join("");
+        checkins = Object.fromEntries(
+          checkinResult.data.map((record) => [record.guest_id, record.checked_in_at])
+        );
+        rsvps = rsvpResult.data.map((record) => ({
+          name: record.guest_name,
+          status: record.status,
+          guestsWithYou: record.guests_with_you,
+          phone: record.phone,
+          notes: record.notes,
+          receivedAt: record.received_at
+        }));
+        render();
+      };
+
       const render = () => {
-        const checkins = readCheckins();
-        const rsvps = readRsvps();
-        const checkedGuests = WEDDING_GUESTS.filter((guest) => checkins[guest.id]);
+        const checkedGuests = weddingGuests.filter((guest) => checkins[guest.id]);
         const checkedSeats = checkedGuests.reduce((sum, guest) => sum + guest.seats, 0);
-        const totalSeats = WEDDING_GUESTS.reduce((sum, guest) => sum + guest.seats, 0);
+        const totalSeats = weddingGuests.reduce((sum, guest) => sum + guest.seats, 0);
         const attendingRsvps = rsvps.filter((rsvp) => rsvp.status === "Attending");
         const attendingSeats = attendingRsvps.reduce((sum, rsvp) => sum + 1 + Number(rsvp.guestsWithYou || 0), 0);
 
         stats.innerHTML = `
-          <span class="stat">${checkedGuests.length}/${WEDDING_GUESTS.length} invitations checked in</span>
+          <span class="stat">${checkedGuests.length}/${weddingGuests.length} invitations checked in</span>
           <span class="stat">${checkedSeats}/${totalSeats} guests arrived</span>
           <span class="stat">${totalSeats - checkedSeats} seats remaining</span>
           <span class="stat">${rsvps.length} RSVP forms</span>
           <span class="stat">${attendingSeats} RSVP guests attending</span>
         `;
 
-        rows.innerHTML = WEDDING_GUESTS.map((guest) => {
+        rows.innerHTML = weddingGuests.map((guest) => {
           const checked = checkins[guest.id];
           return `
             <tr>
@@ -614,10 +643,9 @@
         `;
       };
 
-      const checkCode = (rawCode) => {
+      const checkCode = async (rawCode) => {
         const code = normalize(rawCode);
         const guest = guestsById.get(code);
-        const checkins = readCheckins();
 
         if (!guest) {
           showResult("bad", "Not found", "Invalid invitation", "This QR code is not in the guest list.");
@@ -630,8 +658,24 @@
           return;
         }
 
-        checkins[guest.id] = new Date().toISOString();
-        writeCheckins(checkins);
+        const { data, error } = await supabaseClient
+          .from("wedding_checkins")
+          .insert({ guest_id: guest.id })
+          .select("checked_in_at")
+          .single();
+
+        if (error) {
+          if (error.code === "23505") {
+            await refreshData();
+            const time = checkins[guest.id] ? new Date(checkins[guest.id]).toLocaleString() : "an earlier time";
+            showResult("bad", "Already used", guest.name, `This invitation was already checked in on ${time}.`);
+          } else {
+            showResult("bad", "Database issue", guest.name, error.message);
+          }
+          return;
+        }
+
+        checkins[guest.id] = data.checked_in_at;
         showResult("ok", "Welcome", guest.name, `${guest.seats} ${guest.seats === 1 ? "seat" : "seats"} confirmed.`);
         render();
       };
@@ -641,7 +685,7 @@
         try {
           const codes = await detector.detect(video);
           if (codes.length) {
-            checkCode(codes[0].rawValue);
+            await checkCode(codes[0].rawValue);
             await new Promise((resolve) => setTimeout(resolve, 1400));
           }
         } catch (error) {
@@ -664,16 +708,15 @@
         scanLoop();
       });
 
-      document.querySelector("#manualCheck").addEventListener("click", () => {
-        checkCode(manualCode.value);
+      document.querySelector("#manualCheck").addEventListener("click", async () => {
+        await checkCode(manualCode.value);
         manualCode.value = "";
       });
 
       document.querySelector("#exportCsv").addEventListener("click", () => {
-        const checkins = readCheckins();
         const rows = [
           ["Guest", "Seats", "Code", "Status", "Checked In At"],
-          ...WEDDING_GUESTS.map((guest) => [
+          ...weddingGuests.map((guest) => [
             guest.name,
             guest.seats,
             guest.id,
@@ -684,33 +727,34 @@
         downloadCsv("ibrahim-rasha-checkins.csv", rows);
       });
 
-      rsvpForm.addEventListener("submit", (event) => {
+      rsvpForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const name = rsvpGuest.value.trim();
         if (!name) return;
 
-        const rsvps = readRsvps();
-        const existingIndex = rsvps.findIndex((rsvp) => normalize(rsvp.name) === normalize(name));
         const rsvp = {
-          name,
+          guest_name: name,
           status: rsvpStatus.value,
-          guestsWithYou: Math.max(0, Number(rsvpGuests.value || 0)),
+          guests_with_you: Math.max(0, Number(rsvpGuests.value || 0)),
           phone: rsvpPhone.value.trim(),
           notes: rsvpNotes.value.trim(),
-          receivedAt: new Date().toISOString()
+          received_at: new Date().toISOString()
         };
 
-        if (existingIndex >= 0) rsvps[existingIndex] = rsvp;
-        else rsvps.push(rsvp);
+        const { error } = await supabaseClient
+          .from("wedding_rsvps")
+          .upsert(rsvp, { onConflict: "guest_name" });
 
-        writeRsvps(rsvps);
+        if (error) {
+          showResult("bad", "Database issue", name, error.message);
+          return;
+        }
         rsvpForm.reset();
         rsvpGuests.value = 0;
-        render();
+        await refreshData();
       });
 
       document.querySelector("#exportRsvpCsv").addEventListener("click", () => {
-        const rsvps = readRsvps();
         const rows = [
           ["Guest", "Status", "Guests Attending With You", "Phone", "Received At", "Notes"],
           ...rsvps.map((rsvp) => [
@@ -725,30 +769,43 @@
         downloadCsv("ibrahim-rasha-rsvps.csv", rows);
       });
 
-      document.querySelector("#clearRsvps").addEventListener("click", () => {
-        writeRsvps([]);
+      document.querySelector("#clearRsvps").addEventListener("click", async () => {
+        if (!window.confirm("Clear all RSVP records?")) return;
+        const { error } = await supabaseClient
+          .from("wedding_rsvps")
+          .delete()
+          .not("guest_name", "is", null);
+        if (error) {
+          showResult("bad", "Database issue", "RSVP records were not cleared", error.message);
+          return;
+        }
+        await refreshData();
+      });
+
+      document.querySelector("#resetCheckins").addEventListener("click", async () => {
+        if (!window.confirm("Reset all guest check-ins?")) return;
+        const { error } = await supabaseClient
+          .from("wedding_checkins")
+          .delete()
+          .not("guest_id", "is", null);
+        if (error) {
+          showResult("bad", "Database issue", "Check-ins were not reset", error.message);
+          return;
+        }
+        checkins = {};
+        showResult("ok", "Reset", "Check-ins cleared", "All guests are pending again.");
         render();
       });
 
-      document.querySelector("#resetCheckins").addEventListener("click", () => {
-        writeCheckins({});
-        showResult("ok", "Reset", "Check-ins cleared", "All guests are pending again on this device.");
-        render();
-      });
-
-      manualCode.addEventListener("keydown", (event) => {
+      manualCode.addEventListener("keydown", async (event) => {
         if (event.key === "Enter") {
-          checkCode(manualCode.value);
+          await checkCode(manualCode.value);
           manualCode.value = "";
         }
       });
 
-      if (sessionStorage.getItem(AUTH_KEY) === "true") {
-        unlock();
-      } else {
-        render();
-        adminUser.focus();
-      }
+      if (await getAuthorizedUser()) await unlock();
+      else lock();
     </script>
   </body>
 </html>
