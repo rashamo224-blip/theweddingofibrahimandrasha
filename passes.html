@@ -116,6 +116,30 @@
         color: #76645b;
       }
 
+      .demographic-summary {
+        margin: 8px auto 0;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        font-family: Arial, sans-serif;
+      }
+
+      .demographic-summary span {
+        display: inline-flex;
+        align-items: center;
+        min-height: 30px;
+        padding: 6px 12px;
+        border: 1px solid rgba(134, 39, 25, 0.18);
+        border-radius: 999px;
+        color: var(--ink);
+        background: rgba(255, 248, 239, 0.72);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
       .toolbar {
         position: sticky;
         top: 0;
@@ -270,6 +294,7 @@
       <header>
         <h1>Guest QR Passes</h1>
         <p class="summary" id="summary">Ibrahim & Rasha</p>
+        <p class="demographic-summary" id="demographicSummary" aria-live="polite"></p>
       </header>
 
       <nav class="toolbar" aria-label="QR pass actions">
@@ -292,10 +317,34 @@
       const adminUser = document.querySelector("#adminUser");
       const adminPass = document.querySelector("#adminPass");
       let weddingGuests = [];
+      const getGender = (guest) => String(guest.gender || guest.Gender || "").trim().toLowerCase();
+      const getAgeGroup = (guest) => String(guest.age_group || guest.Age || guest.age || "adult").trim().toLowerCase().replaceAll(" ", "_");
+      const isChild = (guest) => ["child", "children", "child_under_12", "children_under_12", "under_12", "under12"].includes(getAgeGroup(guest));
+      const guestSeats = (guest) => Number(guest.seats || 1);
+      const loadGuests = async () => {
+        return supabaseClient
+          .from("wedding_guests")
+          .select("*")
+          .order("id");
+      };
       const renderPasses = () => {
         const totalSeats = weddingGuests.reduce((sum, guest) => sum + guest.seats, 0);
+        const femaleAdults = weddingGuests
+          .filter((guest) => getGender(guest) === "female" && !isChild(guest))
+          .reduce((sum, guest) => sum + guestSeats(guest), 0);
+        const femaleChildren = weddingGuests
+          .filter((guest) => getGender(guest) === "female" && isChild(guest))
+          .reduce((sum, guest) => sum + guestSeats(guest), 0);
+        const maleGuests = weddingGuests
+          .filter((guest) => getGender(guest) === "male")
+          .reduce((sum, guest) => sum + guestSeats(guest), 0);
         document.querySelector("#summary").textContent =
           `${weddingGuests.length} invitations · ${totalSeats} guests · Friends`;
+        document.querySelector("#demographicSummary").innerHTML = `
+          <span>Female adults: ${femaleAdults}</span>
+          <span>Female children: ${femaleChildren}</span>
+          <span>Male guests: ${maleGuests}</span>
+        `;
 
         passes.innerHTML = weddingGuests.map((guest) => `
           <article class="pass">
@@ -310,10 +359,7 @@
         `).join("");
       };
       const unlock = async () => {
-        const { data, error } = await supabaseClient
-          .from("wedding_guests")
-          .select("id, name, seats, guest_group")
-          .order("id");
+        const { data, error } = await loadGuests();
         if (error) {
           loginError.textContent = error.message || "Unable to load guest passes.";
           await supabaseClient.auth.signOut();

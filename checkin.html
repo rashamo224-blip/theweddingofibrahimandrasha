@@ -410,6 +410,8 @@
               <tr>
                 <th>Guest</th>
                 <th>Seats</th>
+                <th>Gender</th>
+                <th>Age</th>
                 <th>Code</th>
                 <th>Status</th>
               </tr>
@@ -533,6 +535,35 @@
         link.click();
         URL.revokeObjectURL(link.href);
       };
+      const formatGender = (value) => ({
+        female: "Female",
+        male: "Male"
+      }[String(value || "").trim().toLowerCase()] || "");
+      const normalizeAgeGroup = (value) => String(value || "adult").trim().toLowerCase().replaceAll(" ", "_");
+      const formatAgeGroup = (value) => ({
+        adult: "Adult",
+        child_under_12: "Child under 12"
+      }[normalizeAgeGroup(value)] || "Adult");
+      const guestDetails = (guest) => [
+        `${guest.seats} ${guest.seats === 1 ? "seat" : "seats"}`,
+        formatGender(guest.gender),
+        formatAgeGroup(guest.age_group)
+      ].filter(Boolean).join(" · ");
+      const loadGuests = async () => {
+        const guests = await supabaseClient
+          .from("wedding_guests")
+          .select("*")
+          .order("id");
+        if (!guests.error) {
+          guests.data = guests.data.map((guest) => ({
+            ...guest,
+            gender: guest.gender || guest.Gender || null,
+            age_group: guest.age_group || guest.Age || "adult"
+          }));
+          return guests;
+        }
+        return guests;
+      };
 
       loginForm.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -571,7 +602,7 @@
 
       const refreshData = async () => {
         const [guestResult, checkinResult, rsvpResult] = await Promise.all([
-          supabaseClient.from("wedding_guests").select("id, name, seats, guest_group").order("id"),
+          loadGuests(),
           supabaseClient.from("wedding_checkins").select("guest_id, checked_in_at"),
           supabaseClient.from("wedding_rsvps").select("*").order("received_at", { ascending: false })
         ]);
@@ -626,6 +657,8 @@
             <tr>
               <td>${guest.name}</td>
               <td>${guest.seats}</td>
+              <td>${formatGender(guest.gender)}</td>
+              <td>${formatAgeGroup(guest.age_group)}</td>
               <td>${guest.id}</td>
               <td class="${checked ? "checked" : "pending"}">${checked ? "Checked in" : "Pending"}</td>
             </tr>
@@ -666,7 +699,7 @@
 
         if (checkins[guest.id]) {
           const time = new Date(checkins[guest.id]).toLocaleString();
-          showResult("bad", "Already used", guest.name, `This invitation was already checked in on ${time}.`);
+          showResult("bad", "Already used", guest.name, `${guestDetails(guest)}. This invitation was already checked in on ${time}.`);
           return;
         }
 
@@ -680,7 +713,7 @@
           if (error.code === "23505") {
             await refreshData();
             const time = checkins[guest.id] ? new Date(checkins[guest.id]).toLocaleString() : "an earlier time";
-            showResult("bad", "Already used", guest.name, `This invitation was already checked in on ${time}.`);
+            showResult("bad", "Already used", guest.name, `${guestDetails(guest)}. This invitation was already checked in on ${time}.`);
           } else {
             showResult("bad", "Database issue", guest.name, error.message);
           }
@@ -688,7 +721,7 @@
         }
 
         checkins[guest.id] = data.checked_in_at;
-        showResult("ok", "Welcome", guest.name, `${guest.seats} ${guest.seats === 1 ? "seat" : "seats"} confirmed.`);
+        showResult("ok", "Welcome", guest.name, `${guestDetails(guest)} confirmed.`);
         render();
       };
 
@@ -772,10 +805,12 @@
 
       document.querySelector("#exportCsv").addEventListener("click", () => {
         const rows = [
-          ["Guest", "Seats", "Code", "Status", "Checked In At"],
+          ["Guest", "Seats", "Gender", "Age", "Code", "Status", "Checked In At"],
           ...weddingGuests.map((guest) => [
             guest.name,
             guest.seats,
+            formatGender(guest.gender),
+            formatAgeGroup(guest.age_group),
             guest.id,
             checkins[guest.id] ? "Checked in" : "Pending",
             checkins[guest.id] || ""
