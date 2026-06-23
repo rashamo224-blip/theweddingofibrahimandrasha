@@ -325,7 +325,12 @@
       const adminUser = document.querySelector("#adminUser");
       const adminPass = document.querySelector("#adminPass");
       let weddingGuests = [];
-      const getGender = (guest) => String(guest.gender || guest.Gender || "").trim().toLowerCase();
+      const getGender = (guest) => {
+        const value = String(guest.gender || guest.Gender || "").trim().toLowerCase();
+        if (["female", "f", "woman", "women", "lady", "ladies", "انثى", "أنثى", "نساء"].includes(value)) return "female";
+        if (["male", "m", "man", "men", "gentleman", "gentlemen", "ذكر", "رجال"].includes(value)) return "male";
+        return value;
+      };
       const getAgeGroup = (guest) => String(guest.age_group || guest.Age || guest.age || "adult").trim().toLowerCase().replaceAll(" ", "_");
       const isChild = (guest) => ["child", "children", "child_under_12", "children_under_12", "under_12", "under12"].includes(getAgeGroup(guest));
       const guestSeats = (guest) => Number(guest.seats || 1);
