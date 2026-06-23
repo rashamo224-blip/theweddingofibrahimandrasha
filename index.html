@@ -8,6 +8,15 @@
       name="description"
       content="Electronic wedding invitation."
     />
+    <script>
+      if (
+        location.hash.includes("type=recovery") ||
+        location.hash.includes("access_token=") ||
+        location.hash.includes("error_code=otp_expired")
+      ) {
+        location.replace(`${location.origin}/reset-password.html${location.hash}`);
+      }
+    </script>
     <style>
       :root {
         --cream: #f6efe3;
