@@ -209,6 +209,14 @@
         font-size: 0.72rem;
       }
 
+      .male-kicker {
+        color: #8d7467;
+        font-size: 0.78rem;
+        line-height: 1.75;
+        letter-spacing: 0;
+        text-transform: none;
+      }
+
       .name {
         color: var(--ink);
         font-size: 1.55rem;
@@ -349,7 +357,13 @@
         passes.innerHTML = weddingGuests.map((guest) => `
           <article class="pass">
             <div class="names">
-              <div class="kicker">Ibrahim & Rasha</div>
+              ${getGender(guest) === "male" ? `
+                <div class="kicker male-kicker" lang="ar" dir="rtl">
+                  دعوة زفاف ابراهيم صقر<br>
+                  ٢٦ يونيو ٢٠٢٦<br>
+                  فندق هوليداي ان السالميه
+                </div>
+              ` : `<div class="kicker">Ibrahim & Rasha</div>`}
               <div class="name">${guest.name}</div>
               ${guest.seats > 1 ? `<div class="seats">${guest.seats - 1} guests attending with you</div>` : ""}
             </div>
